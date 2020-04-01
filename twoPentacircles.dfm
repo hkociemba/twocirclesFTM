@@ -11,6 +11,7 @@ object Form1: TForm1
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  OnCreate = FormCreate
   DesignSize = (
     527
     336)
@@ -31,7 +32,13 @@ object Form1: TForm1
     Top = 0
     Width = 529
     Height = 297
-    Anchors = [akLeft, akTop, akRight]
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    Font.Charset = EASTEUROPE_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -15
+    Font.Name = 'Times New Roman'
+    Font.Style = []
+    ParentFont = False
     ScrollBars = ssBoth
     TabOrder = 1
   end
@@ -40,6 +47,7 @@ object Form1: TForm1
     Top = 303
     Width = 75
     Height = 25
+    Anchors = [akLeft, akBottom]
     Caption = 'Stop'
     TabOrder = 2
     OnClick = Button2Click
