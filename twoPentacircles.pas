@@ -8,7 +8,8 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
 
 const
-  NPIECE = 18; // Anzahl der puzzle teile in den zwei RIngen
+  NPIECE = 6; // Anzahl der puzzle teile in den zwei RIngen
+  BWSEARCHLIM: array [3 .. 9] of integer = (13, 13, 13, 13, 10, 13, 13);
 
 type
   TForm1 = class(TForm)
@@ -24,9 +25,9 @@ type
     { Public-Deklarationen }
   end;
 
-  TTileID = array [0 .. NPIECE - 1] of Integer;
-  TTileOri = array [0 .. NPIECE - 1] of Integer;
-  TPuzOri = array [0 .. NPIECE - 1] of Integer;
+  TTileID = array [0 .. NPIECE - 1] of integer;
+  TTileOri = array [0 .. NPIECE - 1] of integer;
+  TPuzOri = array [0 .. NPIECE - 1] of integer;
 
   TPuz = record
     id: TTileID;
@@ -47,13 +48,13 @@ var
   // pruningNCircle: array [0 .. 48620 - 1] of array of UInt64; // 48620 = 18 choose 9
 
   pruningNCircle: array of array of UInt64; // 48620 = 18 choose 9
-  sofar: array [0 .. 50] of Integer;
+  sofar: array [0 .. 50] of integer;
   solved: Boolean;
-  NPOS: Integer; // Anzahl der Positionen des pruning sets
-  NPERM: Integer; // Anzahl der Permutationen des pruning sets
+  NPOS: integer; // Anzahl der Positionen des pruning sets
+  NPERM: integer; // Anzahl der Permutationen des pruning sets
   PRUNID, NSTATES: Int64;
 
-function nfac(n: Integer): Integer;
+function nfac(n: integer): integer;
 begin
   if n = 1 then
     exit(1)
@@ -61,9 +62,9 @@ begin
     exit(n * nfac(n - 1));
 end;
 
-function c_nk(n, k: Integer): Integer;
+function c_nk(n, k: integer): integer;
 var
-  i, j: Integer;
+  i, j: integer;
 begin
   if n < k then
     exit(0);
@@ -81,10 +82,10 @@ begin
   end;
 end;
 
-procedure rot_right(var a: Array of Integer; l, r: Integer);
+procedure rot_right(var a: Array of integer; l, r: integer);
 // Rotate array arr right between l and r. r is included.
 var
-  tmp, i: Integer;
+  tmp, i: integer;
 begin
   tmp := a[r];
   for i := r downto l + 1 do
@@ -92,10 +93,10 @@ begin
   a[l] := tmp
 end;
 
-procedure rot_left(var a: Array of Integer; l, r: Integer);
+procedure rot_left(var a: Array of integer; l, r: integer);
 // Rotate array arr left between l and r. r is included.
 var
-  tmp, i: Integer;
+  tmp, i: integer;
 begin
   tmp := a[l];
   for i := l to r - 1 do
@@ -103,11 +104,11 @@ begin
   a[r] := tmp
 end;
 
-function get_Ntupel_sorted(var arr: array of Integer): Int64;
+function get_Ntupel_sorted(var arr: array of integer): Int64;
 // 0<=get_9tupel_sorted < 17.643.225.600
 var
-  a, b, x, j, k: Integer;
-  permN: array [0 .. NPIECE div 2 - 1] of Integer;
+  a, b, x, j, k: integer;
+  permN: array [0 .. NPIECE div 2 - 1] of integer;
 begin
   a := 0;
   x := 0;
@@ -138,20 +139,20 @@ begin
   result := Int64(NPERM) * a + b
 end;
 
-procedure set_Ntupel_sorted(var arr: array of Integer; idx: Int64);
+procedure set_Ntupel_sorted(var arr: array of integer; idx: Int64);
 var
-  a, b, j, k, x: Integer;
-  permN: array [0 .. NPIECE div 2 - 1] of Integer;
+  a, b, j, k, x: integer;
+  permN: array [0 .. NPIECE div 2 - 1] of integer;
 begin
   for j := 0 to NPIECE div 2 - 1 do
     permN[j] := j;
 
   b := idx mod NPERM;
   a := idx div NPERM;
-  for j := 0 to 17 do
+  for j := 0 to NPIECE-1 do
     arr[j] := -1;
   j := 1; // generate permutation of tiles 0..8
-  while j < NPIECE div 2 - 1 do
+  while j < NPIECE div 2  do
   begin
     k := b mod (j + 1);
     b := b div (j + 1);
@@ -183,9 +184,9 @@ begin
 
 end;
 
-procedure move(var p: TPuz; cID, dir: Integer);
+procedure move(var p: TPuz; cID, dir: integer);
 var
-  i, tmpID, tmpOri: Integer;
+  i, tmpID, tmpOri: integer;
 begin
   case dir of
     0: // clockwise turn
@@ -234,8 +235,8 @@ begin
         end
         else
         begin
-          tmpID := p.id[17];
-          tmpOri := p.ori[17];
+          tmpID := p.id[NPIECE - 1];
+          tmpOri := p.ori[NPIECE - 1];
           for i := 17 downto (NPIECE div 2 + 1) do
           begin
             p.id[i] := p.id[i - 1];
@@ -252,9 +253,9 @@ begin
   end;
 end;
 
-procedure moveN(var p: TPuz; n: Integer);
+procedure moveN(var p: TPuz; n: integer);
 var
-  i, tmpID: Integer;
+  i, tmpID: integer;
 begin
   case n of
     0: // right disk clockwise
@@ -290,9 +291,9 @@ begin
   end;
 end;
 
-procedure applySequence(var man: array of Integer; len: Integer; var p: TPuz);
+procedure applySequence(var man: array of integer; len: integer; var p: TPuz);
 var
-  i, j: Integer;
+  i, j: integer;
 begin
   for i := 0 to len - 1 do
   begin
@@ -309,7 +310,7 @@ end;
 
 procedure remap(var p, pm: TPuz);
 var
-  i: Integer;
+  i: integer;
 begin
   for i := 0 to NPIECE - 1 do
   begin
@@ -319,11 +320,11 @@ begin
 
 end;
 
-procedure setPruning(pos, val: Int64);
+procedure setPruning(pos, val: UInt64);
 /// // / 0<=val<4
 var
-  chunk, offset, offset64, base64: Integer;
-  mask: Int64;
+  chunk, offset, offset64, base64: integer;
+  mask: UInt64;
 begin
   chunk := pos div NPERM;
   offset := pos mod NPERM;
@@ -338,10 +339,10 @@ begin
   pruningNCircle[chunk, base64] := pruningNCircle[chunk, base64] or val;
 end;
 
-function getPruning(pos: Int64): Integer;
+function getPruning(pos: Int64): integer;
 var
-  chunk, offset, offset64, base64: Integer;
-  mask, val: Int64;
+  chunk, offset, offset64, base64: integer;
+  mask, val: UInt64;
 begin
   chunk := pos div NPERM;
   offset := pos mod NPERM;
@@ -351,12 +352,12 @@ begin
   mask := Int64(3);
   mask := mask shl (offset64 * 2);
   val := pruningNCircle[chunk, base64] and mask;
-  result := Integer(val shr (offset64 * 2));
+  result := integer(val shr (offset64 * 2));
 end;
 
 procedure initPuzzle(var p: TPuz);
 var
-  i, j: Integer;
+  i, j: integer;
 begin
   for i := 0 to NPIECE - 1 do
   begin
@@ -376,11 +377,14 @@ var
   depth: UInt8;
   done, doneOld, n, i, j: Int64;
   bwsearch, hit: Boolean;
-  NINT64: Integer;
-const
-  fn = 'pruningN';
+  NINT64: integer;
+var
+  fnk: String;
+  // const
+  // fn = 'pruningN';
 
 begin
+  fnk := 'pruning' + Inttostr(NPIECE div 2);
   if NPERM mod 32 > 0 then
     NINT64 := NPERM div 32 + 1
   else
@@ -389,9 +393,9 @@ begin
   for i := 0 to NPOS - 1 do
     Setlength(pruningNCircle[i], NINT64);
   // 11340 = 9!/4/8
-  if FileExists(fn) then
+  if FileExists(fnk) then
   begin
-    fs := TFileStream.Create(fn, fmOpenRead);
+    fs := TFileStream.Create(fnk, fmOpenRead);
     for i := 0 to NPOS - 1 do
       fs.ReadBuffer(pruningNCircle[i][0], NINT64 * 8);
     fs.free;
@@ -405,11 +409,11 @@ begin
     end;
 
     initPuzzle(pz);
-    n := get_Ntupel_sorted(pz.id);
+    // n := get_Ntupel_sorted(pz.id);
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     depth := 0;
     bwsearch := false;
-    setPruning(n, depth);
+    setPruning(PRUNID, depth);
     done := 1;
     doneOld := 0;
     while done <> doneOld do
@@ -419,7 +423,7 @@ begin
       doneOld := done;
       inc(depth);
 
-      if depth = 13 then
+      if depth = BWSEARCHLIM[NPIECE div 2] then
         bwsearch := true;
 
       for i := 0 to NSTATES - 1 do
@@ -498,16 +502,16 @@ begin
       end;
     end;
     Form1.Memo1.Lines.Add(Inttostr(depth) + ': ' + Inttostr(done));
-    fs := TFileStream.Create(fn, fmCreate);
+    fs := TFileStream.Create(fnk, fmCreate);
     for i := 0 to NPOS - 1 do
       fs.WriteBuffer(pruningNCircle[i][0], NINT64 * 8);
     fs.free;
   end;
 end;
 
-function getTrueDist(pz: TPuz): Integer;
+function getTrueDist(pz: TPuz): integer;
 var
-  i, n, nnew: Integer;
+  i, n, nnew: integer;
   idx, idx2: Int64;
   hit: Boolean;
 begin
@@ -550,9 +554,9 @@ begin
   end;
 end;
 
-function toString(var a: array of Integer; len: Integer): String;
+function toString(var a: array of integer; len: integer): String;
 var
-  i: Integer;
+  i: integer;
 begin
   result := '';
   for i := 0 to len - 1 do
@@ -566,10 +570,10 @@ begin
   end;
 end;
 
-function getNewPrun(var pz: TPuz; oldPrun: Integer): Integer;
+function getNewPrun(var pz: TPuz; oldPrun: integer): integer;
 // compute new pruning value from old pruning value and the new table mod 3 entry
 var
-  n: Integer;
+  n: integer;
 begin
   n := getPruning(get_Ntupel_sorted(pz.id));
   case ((n + 3 - oldPrun mod 3)) mod 3 of
@@ -582,10 +586,10 @@ begin
   end;
 end;
 
-function twist(disk: Integer; var maneuver: array of Integer;
-  length: Integer): Integer;
+function twist(disk: integer; var maneuver: array of integer;
+  length: integer): integer;
 var
-  i: Integer;
+  i: integer;
 begin
   result := 0;
   if disk = 0 then
@@ -604,10 +608,10 @@ begin
         inc(result, maneuver[i] - (NPIECE div 2 - 1))
     end
   end;
-  result := (10*(NPIECE div 2 +1) + result) mod (NPIECE div 2 + 1);
+  result := (10 * (NPIECE div 2 + 1) + result) mod (NPIECE div 2 + 1);
 end;
 
-procedure search(var pz: TPuz; len, togo, prun0, prun1: Integer);
+procedure search(var pz: TPuz; len, togo, prun0, prun1: integer);
 var
   tw0, tw1, i: Int64;
   pr, po: TPuz;
@@ -626,54 +630,55 @@ begin
     initPuzzle(po);
     applySequence(sofar, len, po);
 
-//    if tw0 <> 0 then
-//      exit;
-//    if tw1 <> 0 then
-//      exit;
+    // if tw0 <> 0 then
+    // exit;
+    // if tw1 <> 0 then
+    // exit;
 
-//    if (po.ori[0] = 0) then
-//      exit;
+    // if (po.ori[0] = 0) then
+    // exit;
 
     // if po.ori[0] <> 0 then
     // exit;
-//    if po.ori[1] <> 0 then
-//      exit;
-//    if po.ori[2] <> 0 then
-//      exit;
-//    if po.ori[3] <> 0 then
-//      exit;
-//    if po.ori[4] <> 0 then
-//      exit;
-//    if po.ori[5] <> 0 then
-//      exit;
-//    if po.ori[6] <> 0 then
-//      exit;
-//    if po.ori[7] <> 0 then
-//      exit;
-//    if po.ori[8] <> 0 then
-//      exit;
+    // if po.ori[1] <> 0 then
+    // exit;
+    // if po.ori[2] <> 0 then
+    // exit;
+    // if po.ori[3] <> 0 then
+    // exit;
+    // if po.ori[4] <> 0 then
+    // exit;
+    // if po.ori[5] <> 0 then
+    // exit;
+    // if po.ori[6] <> 0 then
+    // exit;
+    // if po.ori[7] <> 0 then
+    // exit;
+    // if po.ori[8] <> 0 then
+    // exit;
     // if po.ori[9] <> 0 then
     // exit;
-//    if po.ori[10] <> 0 then
-//      exit;
-//    if po.ori[11] <> 0 then
-//      exit;
-//    if po.ori[12] <> 0 then
-//      exit;
-//    if po.ori[13] <> 0 then
-//      exit;
-//    if po.ori[14] <> 0 then
-//      exit;
-//    if po.ori[15] <> 0 then
-//      exit;
-//    if po.ori[16] <> 0 then
-//      exit;
-//    if po.ori[17] <> 0 then
-//      exit;
+    // if po.ori[10] <> 0 then
+    // exit;
+    // if po.ori[11] <> 0 then
+    // exit;
+    // if po.ori[12] <> 0 then
+    // exit;
+    // if po.ori[13] <> 0 then
+    // exit;
+    // if po.ori[14] <> 0 then
+    // exit;
+    // if po.ori[15] <> 0 then
+    // exit;
+    // if po.ori[16] <> 0 then
+    // exit;
+    // if po.ori[17] <> 0 then
+    // exit;
 
     Form1.Memo1.Lines.Add(toString(sofar, len) + ' (' + Inttostr(len) + '), ' +
       'twist: (' + Inttostr(tw0) + ', ' + Inttostr(tw1) + ')');
-    Form1.Memo1.Lines.Add(Inttostr(po.ori[0]) + ' ' + Inttostr(po.ori[9]));
+    Form1.Memo1.Lines.Add(Inttostr(po.ori[0]) + ' ' +
+      Inttostr(po.ori[NPIECE div 2]));
     Application.ProcessMessages;
     // solved := true;
   end
@@ -683,7 +688,7 @@ begin
     begin
       if sofar[len - togo - 1] < NPIECE div 2 then // disk 0 turn before
       begin
-        for i := 0 to NPIECE div 2 -1 do // now disk 1 turns
+        for i := 0 to NPIECE div 2 - 1 do // now disk 1 turns
         begin
           moveN(pz, 2);
           sofar[len - togo] := NPIECE div 2 + i; // turn of left disk by i
@@ -695,7 +700,7 @@ begin
       end
       else // disk 1 turn before
       begin
-        for i := 0 to NPIECE div 2 -1 do // now disk 0 turns
+        for i := 0 to NPIECE div 2 - 1 do // now disk 0 turns
         begin
           moveN(pz, 0);
           sofar[len - togo] := i; // turn of right disk by i
@@ -708,7 +713,7 @@ begin
     end
     else // first move, len=togo
     begin
-      for i := 0 to NPIECE div 2 -1 do // first turn on disk 0
+      for i := 0 to NPIECE div 2 - 1 do // first turn on disk 0
       begin
         moveN(pz, 0);
         sofar[len - togo] := i;
@@ -717,7 +722,7 @@ begin
       end;
       moveN(pz, 0); // restore puzzle state
 
-      for i := 0 to NPIECE div 2 -1 do // first turn on disk 1
+      for i := 0 to NPIECE div 2 - 1 do // first turn on disk 1
       begin
         moveN(pz, 2);
         sofar[len - togo] := i + NPIECE div 2;
@@ -732,7 +737,7 @@ end;
 procedure findsolution;
 var
   p, pm: TPuz;
-  a, b, c, d, ln, prun0, prun1: Integer;
+  a, b, c, d, ln, prun0, prun1: integer;
 begin
   initPuzzle(p);
   // jetzt ggf. Änderungen vornehmen
@@ -743,26 +748,26 @@ begin
   // moveN(p, 3);
   // moveN(p, 1);
 
-  // a := 2;
-  // b := 7;
-  // c := 10;
-  // d := 11;
-  // p.id[a] := b;
-  // p.id[b] := a;
-  // p.id[c] := d;
-  // p.id[d] := c;
+//   a := 0;
+//   b := NPIECE div 2;
+//   c := b+1;
+//   d := b-1;
+//   p.id[a] := b;
+//   p.id[b] := a;
+//   p.id[c] := d;
+//   p.id[d] := c;
 
-  // a := 0;
-  // b := 8;
-  // c := 10;
-  // p.id[b] := a;
-  // p.id[c] := b;
-  // p.id[a] := c;
+//   a := 0;
+//   b := 8;
+//   c := 10;
+//   p.id[b] := a;
+//   p.id[c] := b;
+//   p.id[a] := c;
 
-  // a:=4;
-  // b:=14;
-  // p.id[a] := b;
-  // p.id[b] := a;
+   a:=0;
+   b:=NPIECE div 2;
+   p.id[a] := b;
+   p.id[b] := a;
 
   solved := false;
   ln := 0;
@@ -783,9 +788,18 @@ procedure TForm1.Button1Click(Sender: TObject);
 var
   pz: TPuz;
   n: Int64;
+  i: integer;
 begin
   // initPuzzle(pz);
   // n := get_9tupel_sorted(pz.id);
+
+  for i := 0 to NSTATES - 1 do
+  begin
+    set_Ntupel_sorted(pz.id, i);
+    n := get_Ntupel_sorted(pz.id);
+    if n <> i then
+      n := 0;
+  end;
 
   loadPruning;
   findsolution;
@@ -799,7 +813,7 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 var
-  i: Integer;
+  i: integer;
   pz: TPuz;
 begin
   // pruningNCircle: array [0 .. 48620 - 1] of array of UInt64; // 48620 = 18 choose 9
