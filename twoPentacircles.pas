@@ -8,7 +8,7 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
 
 const
-  NPIECE = 6; // Anzahl der puzzle teile in den zwei RIngen
+  NPIECE = 18; // Anzahl der puzzle teile in den zwei RIngen
   BWSEARCHLIM: array [3 .. 9] of integer = (13, 13, 13, 13, 10, 13, 13);
 
 type
@@ -630,55 +630,24 @@ begin
     initPuzzle(po);
     applySequence(sofar, len, po);
 
+
+
+    for i  := 0 to NPIECE-1 do  // Fix orientation of pieces
+      if po.ori[i] <> 0 then
+        exit;
+
+
     // if tw0 <> 0 then
     // exit;
     // if tw1 <> 0 then
     // exit;
 
-    // if (po.ori[0] = 0) then
-    // exit;
 
-    // if po.ori[0] <> 0 then
-    // exit;
-    // if po.ori[1] <> 0 then
-    // exit;
-    // if po.ori[2] <> 0 then
-    // exit;
-    // if po.ori[3] <> 0 then
-    // exit;
-    // if po.ori[4] <> 0 then
-    // exit;
-    // if po.ori[5] <> 0 then
-    // exit;
-    // if po.ori[6] <> 0 then
-    // exit;
-    // if po.ori[7] <> 0 then
-    // exit;
-    // if po.ori[8] <> 0 then
-    // exit;
-    // if po.ori[9] <> 0 then
-    // exit;
-    // if po.ori[10] <> 0 then
-    // exit;
-    // if po.ori[11] <> 0 then
-    // exit;
-    // if po.ori[12] <> 0 then
-    // exit;
-    // if po.ori[13] <> 0 then
-    // exit;
-    // if po.ori[14] <> 0 then
-    // exit;
-    // if po.ori[15] <> 0 then
-    // exit;
-    // if po.ori[16] <> 0 then
-    // exit;
-    // if po.ori[17] <> 0 then
-    // exit;
 
     Form1.Memo1.Lines.Add(toString(sofar, len) + ' (' + Inttostr(len) + '), ' +
       'twist: (' + Inttostr(tw0) + ', ' + Inttostr(tw1) + ')');
-    Form1.Memo1.Lines.Add(Inttostr(po.ori[0]) + ' ' +
-      Inttostr(po.ori[NPIECE div 2]));
+//    Form1.Memo1.Lines.Add(Inttostr(po.ori[0]) + ' ' +
+//      Inttostr(po.ori[NPIECE div 2]));
     Application.ProcessMessages;
     // solved := true;
   end
@@ -764,10 +733,18 @@ begin
 //   p.id[c] := b;
 //   p.id[a] := c;
 
-   a:=0;
-   b:=NPIECE div 2;
+//   a:=0;
+//   b:=NPIECE div 2;
+//   p.id[a] := b;
+//   p.id[b] := a;
+
+   a:=NPIECE div 2-1;
+   b:=NPIECE div 2+1;
    p.id[a] := b;
    p.id[b] := a;
+
+
+
 
   solved := false;
   ln := 0;
@@ -787,19 +764,16 @@ end;
 procedure TForm1.Button1Click(Sender: TObject);
 var
   pz: TPuz;
-  n: Int64;
-  i: integer;
+  i, n: Int64;
 begin
-  // initPuzzle(pz);
-  // n := get_9tupel_sorted(pz.id);
 
-  for i := 0 to NSTATES - 1 do
-  begin
-    set_Ntupel_sorted(pz.id, i);
-    n := get_Ntupel_sorted(pz.id);
-    if n <> i then
-      n := 0;
-  end;
+//  for i := 0 to NSTATES - 1 do
+//  begin
+//    set_Ntupel_sorted(pz.id, i);
+//    n := get_Ntupel_sorted(pz.id);
+//    if n <> i then
+//      n := 0;
+//  end;
 
   loadPruning;
   findsolution;
